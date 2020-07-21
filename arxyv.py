@@ -32,6 +32,24 @@ def get(url, download_to=None):
     return r
 
 
+def get_meta_tag(soup, name_list, title, ind=0, max_len=None):
+    assert ind in [0, -1]
+
+    for name in name_list:
+        tag = soup.find_all('meta', {'name': name})
+
+        if len(tag) > 0:
+            break
+
+    if len(tag) == 0:
+        raise ValueError('cannot find {0:s} tag'.format(title))
+
+    if max_len is not None:
+        assert len(tag) == max_len
+
+    return tag[0].attrs['content']
+
+
 def handle_url(abs_url, outdir, dl_url=None, verbose=False):
 
     # get abs page
@@ -49,9 +67,7 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
 
     # first author
 
-    tag_author = soup.find_all('meta', {'name': 'citation_author'})
-    assert len(tag_author) >= 1
-    first_author_str = tag_author[0].attrs['content']
+    first_author_str = get_meta_tag(soup, ['citation_author', 'dc.contributor'], 'author')
 
     if ',' in first_author_str:
         first_author = first_author_str.split(',')[0]
@@ -63,18 +79,7 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
 
     # year
 
-    tag_date = soup.find_all('meta', {'name': 'citation_online_date'})
-
-    if len(tag_date) == 0:
-        tag_date = soup.find_all('meta', {'name': 'citation_year'})
-
-        if len(tag_date) == 0:
-            tag_date = soup.find_all('meta', {'name': 'citation_date'})
-        if len(tag_date) == 0:
-            tag_date = soup.find_all('meta', {'name': 'citation_publication_date'})
-
-    assert len(tag_date) == 1
-    date_str = tag_date[0].attrs['content']
+    date_str = get_meta_tag(soup, ['citation_online_date', 'citation_year', 'citation_date', 'citation_publication_date', 'dc.date'], 'date', max_len=1)
 
     if ' ' in date_str:
         sp = date_str.split(' ')
@@ -102,11 +107,7 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
 
     # title
 
-    tag_title = soup.find_all('meta', {'name': 'citation_title'})
-    assert len(tag_title) == 1
-    tag_title = tag_title[0]
-
-    title = tag_title.attrs['content']
+    title = get_meta_tag(soup, ['citation_title', 'dc.title'], 'date', max_len=1)
 
     if verbose:
         print('detected title: '+title)
@@ -145,13 +146,21 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
 def find_download_url(soup):
     # try to find download link
 
-    # arxiv
-    # biorxiv
+    # most sites
     tag_dl = soup.find_all('meta', {'name': 'citation_pdf_url'})
 
     if len(tag_dl) > 0:
         assert len(tag_dl) == 1
         dl_url = tag_dl[0].attrs['content']
+
+        return dl_url
+
+    # elife
+
+    tag_dl = soup.find_all('a', {'data-download-type': 'pdf-article'})
+    if len(tag_dl) > 0:
+        assert len(tag_dl) == 1
+        dl_url = tag_dl[0].attrs['href']
 
         return dl_url
 

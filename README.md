@@ -6,7 +6,7 @@
 
         arxyv.py https://arxiv.org/abs/2001.01337
 
-        arxyv.py 2001.01337  -o target_directory # otherwise $HOME/Downloads is used
+        arxyv.py 2001.01337 -o target_directory  # otherwise $HOME/Downloads is used
 
 PDFs are renamed as *[firstauthor]_[year]_[title].pdf*.
 
@@ -14,10 +14,11 @@ Works with URLs from:
 
 * arXiv
 * bioRxiv
+* eLife
+* Frontiers
+* ICLR
 * Nature
 * PLoS
-* ICLR
-* Frontiers
 
 ## Dependencies
 
