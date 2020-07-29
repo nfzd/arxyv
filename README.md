@@ -13,14 +13,19 @@ PDFs are renamed as *[firstauthor]_[year]_[title].pdf*.
 Works with URLs from:
 
 * arXiv
-* bioRxiv
 * eLife
+* eNeuro
 * Frontiers
 * ICLR
+* IEEExplore
 * Nature
+* OpenReview
 * PLoS
+
+* (bioRxiv currently not working)
 
 ## Dependencies
 
 * BeautifulSoup
 * click
+* requests

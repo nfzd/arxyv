@@ -1,0 +1,38 @@
+#!/bin/sh
+
+cleanup_and_exit()
+{
+  rm tmp/*.pdf
+  rmdir tmp
+  exit $1
+}
+
+fail()
+{
+  echo $1
+  cleanup_and_exit 1
+}
+
+test_download()
+{
+  ./arxyv.py -v -o ./tmp "$1" || fail "cannot download file: $1"
+  [ -f $(echo "./tmp/$2") ] || fail "cannot find output file: ./$2"
+  [ "$(file -b $(echo ./tmp/$2) | cut -d, -f1)" = 'PDF document' ] || fail "bad output file type: ./$2"
+}
+
+cd $(dirname $0)
+
+mkdir tmp
+
+test_download 'https://arxiv.org/abs/1001.1001v1' judge_2010_*.pdf
+#test_download 'https://www.biorxiv.org/content/10.1101/139014v1'
+test_download 'https://elifesciences.org/articles/03980' patterson_2014_*.pdf
+test_download 'https://www.eneuro.org/content/3/4/ENEURO.0176-16.2016' bernard_2016_*.pdf
+test_download 'https://www.frontiersin.org/articles/10.3389/fncom.2020.00039/full' chance_2020_*.pdf
+test_download 'https://iclr.cc/virtual_2020/poster_BkxRRkSKwr.html' jin_2020_*.pdf
+test_download 'https://ieeexplore.ieee.org/document/1677462' mollick_2006_*.pdf
+test_download 'https://www.nature.com/articles/510218a' kutschera_2014_*.pdf
+test_download 'https://openreview.net/forum?id=S1Bb3D5gg' bordes_2017_*.pdf
+test_download 'https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007395' bourne_2019_*.pdf
+
+cleanup_and_exit 0

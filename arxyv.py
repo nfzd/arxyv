@@ -5,29 +5,31 @@
 
 from bs4 import BeautifulSoup
 import click
+import json
 import os.path
 import re
+import requests
+import shutil
 from urllib.parse import urlparse
-import urllib.request
 
-
-user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.92 Safari/537.36'
 
 default_outdir = '~/Downloads'
 
-
-def setup_urllib():
-    opener = urllib.request.build_opener()
-    openeraddheaders = [('User-Agent', user_agent)]
-    urllib.request.install_opener(opener)
-
+user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.92 Safari/537.36'
 
 def get(url, download_to=None):
+    headers = {'user-agent': user_agent}
+
     if download_to is None:
-        r = urllib.request.urlopen(url).read()
+        r = requests.get(url, headers=headers)
+        r = r.text
 
     else:
-        r = urllib.request.urlretrieve(url, filename=download_to)
+        r = requests.get(url, headers=headers, allow_redirects=True)
+        with open(download_to, 'wb') as f:
+            f.write(r.content)
+
+        # TODO: handle response
 
     return r
 
@@ -50,6 +52,31 @@ def get_meta_tag(soup, name_list, title, ind=0, max_len=None):
     return tag[0].attrs['content']
 
 
+def get_ieee_metadata(t, verbose=False):
+    if verbose:
+        print('attempting to read metadata from javascript assignment (ieee style)')
+
+    start = 'global.document.metadata={'
+
+    if not start in t:
+        return None
+
+    s0 = t.index(start) + len(start) - 1
+    s1 = s0 + t[s0:].index("\n") - 1
+
+    meta = json.loads(t[s0:s1])
+
+    author = meta['authors'][0]['lastName']
+    title = meta['title']
+    year = meta['journalDisplayDateOfPublication']#[-4:]
+    arnumber = meta['pdfUrl'].split('=')[-1]
+    dl_url = 'http://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&isnumber=&arnumber=' + arnumber
+
+    print(dl_url)
+
+    return author, title, year, dl_url
+
+
 def handle_url(abs_url, outdir, dl_url=None, verbose=False):
 
     # get abs page
@@ -58,16 +85,25 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
         print('downloading abs page: '+abs_url)
 
     t = get(abs_url)
-    soup = BeautifulSoup(t, features='lxml')
 
     if verbose:
         print('done')
 
     # get properties
 
+    soup = BeautifulSoup(t, features='lxml')
+
+    if 'ieeexplore.ieee.org' in abs_url:
+        first_author_str, title, date_str, dl_url = get_ieee_metadata(t, verbose=verbose)
+        ieee = True
+
+    else:
+        ieee = False
+
     # first author
 
-    first_author_str = get_meta_tag(soup, ['citation_author', 'dc.contributor'], 'author')
+    if not ieee:
+        first_author_str = get_meta_tag(soup, ['citation_author', 'dc.contributor'], 'author')
 
     if ',' in first_author_str:
         first_author = first_author_str.split(',')[0]
@@ -79,7 +115,8 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
 
     # year
 
-    date_str = get_meta_tag(soup, ['citation_online_date', 'citation_year', 'citation_date', 'citation_publication_date', 'dc.date'], 'date', max_len=1)
+    if not ieee:
+        date_str = get_meta_tag(soup, ['citation_online_date', 'citation_year', 'citation_date', 'citation_publication_date', 'dc.date'], 'date', max_len=1)
 
     if ' ' in date_str:
         sp = date_str.split(' ')
@@ -107,7 +144,8 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
 
     # title
 
-    title = get_meta_tag(soup, ['citation_title', 'dc.title'], 'date', max_len=1)
+    if not ieee:
+        title = get_meta_tag(soup, ['citation_title', 'dc.title'], 'date', max_len=1)
 
     if verbose:
         print('detected title: '+title)
@@ -129,12 +167,12 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
             raise ValueError('cannot find download url')
 
     if verbose:
-        print('downloading pdf: '+abs_url)
+        print('downloading pdf: '+dl_url)
 
-    t = get(dl_url, download_to=fn)
+    r = get(dl_url, download_to=fn)
 
-    response_headers = {k: v for k, v in t[1]._headers}
-    assert response_headers['Content-Type'] == 'application/pdf'
+    #response_headers = {k: v for k, v in t[1]._headers}
+    #assert response_headers['Content-Type'] == 'application/pdf'
     #assert int(response_headers['Content-Length']) > 0
 
     if verbose:
@@ -172,8 +210,6 @@ def find_download_url(soup):
 @click.option('-o', '--outdir', type=click.Path(exists=True), default=None, help='output directory, default: $HOME/Downloads')
 @click.option('-v', '--verbose', is_flag=True, default=False, help='be verbose')
 def main(key, outdir, verbose):
-
-    setup_urllib()
 
     # set outdir
 
