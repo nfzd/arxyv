@@ -103,7 +103,7 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
     # first author
 
     if not ieee:
-        first_author_str = get_meta_tag(soup, ['citation_author', 'dc.contributor'], 'author')
+        first_author_str = get_meta_tag(soup, ['citation_author', 'dc.contributor', 'dc.Creator'], 'author')
 
     if ',' in first_author_str:
         first_author = first_author_str.split(',')[0]
@@ -116,7 +116,7 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
     # year
 
     if not ieee:
-        date_str = get_meta_tag(soup, ['citation_online_date', 'citation_year', 'citation_date', 'citation_publication_date', 'dc.date'], 'date', max_len=1)
+        date_str = get_meta_tag(soup, ['citation_online_date', 'citation_year', 'citation_date', 'citation_publication_date', 'dc.date', 'dc.Date'], 'date', max_len=1)
 
     if ' ' in date_str:
         sp = date_str.split(' ')
@@ -145,7 +145,7 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
     # title
 
     if not ieee:
-        title = get_meta_tag(soup, ['citation_title', 'dc.title'], 'date', max_len=1)
+        title = get_meta_tag(soup, ['citation_title', 'dc.title', 'dc.Title'], 'title', max_len=1)
 
     if verbose:
         print('detected title: '+title)
@@ -185,6 +185,7 @@ def find_download_url(soup):
     # try to find download link
 
     # most sites
+
     tag_dl = soup.find_all('meta', {'name': 'citation_pdf_url'})
 
     if len(tag_dl) > 0:
@@ -193,9 +194,23 @@ def find_download_url(soup):
 
         return dl_url
 
+    # annual review
+
+    tag_doi = soup.find_all('meta', {'name': 'dc.Identifier'})
+
+    if len(tag_doi) > 0:
+        assert len(tag_doi) == 1
+        doi = tag_doi[0].attrs['content']
+
+        if '/' in doi and doi.split('/')[1][:8] == 'annurev-':
+            dl_url = "https://www.annualreviews.org/doi/pdf/" + doi
+
+            return dl_url
+
     # elife
 
     tag_dl = soup.find_all('a', {'data-download-type': 'pdf-article'})
+
     if len(tag_dl) > 0:
         assert len(tag_dl) == 1
         dl_url = tag_dl[0].attrs['href']

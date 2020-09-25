@@ -12,6 +12,7 @@ PDFs are renamed as *[firstauthor]_[year]_[title].pdf*.
 
 Works with URLs from:
 
+* Annual Reviews
 * arXiv
 * eLife
 * eNeuro
