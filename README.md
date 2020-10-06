@@ -22,6 +22,7 @@ Works with URLs from:
 * Nature
 * OpenReview
 * PLoS
+* PNAS
 
 * (bioRxiv currently not working)
 
