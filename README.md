@@ -14,6 +14,7 @@ Works with URLs from:
 
 * Annual Reviews
 * arXiv
+* bioRxiv
 * eLife
 * eNeuro
 * Frontiers
@@ -23,8 +24,6 @@ Works with URLs from:
 * OpenReview
 * PLoS
 * PNAS
-
-* (bioRxiv currently not working)
 
 ## Dependencies
 
