@@ -103,7 +103,16 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
     # first author
 
     if not ieee:
-        first_author_str = get_meta_tag(soup, ['citation_author', 'dc.contributor', 'dc.Creator'], 'author')
+        try:
+            multi_author_str = get_meta_tag(soup, ['citation_authors'], 'author')
+
+            if ',' in multi_author_str:
+                first_author_str = multi_author_str.split(',')[0]
+            else:
+                first_author_str = multi_author_str
+
+        except ValueError:
+            first_author_str = get_meta_tag(soup, ['citation_author', 'dc.contributor', 'dc.Creator'], 'author')
 
     if ',' in first_author_str:
         first_author = first_author_str.split(',')[0]
@@ -166,6 +175,9 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
         if dl_url is None:
             raise ValueError('cannot find download url')
 
+        if dl_url[:4] != 'http':
+            raise
+
     if verbose:
         print('downloading pdf: '+dl_url)
 
@@ -210,6 +222,16 @@ def find_download_url(soup):
     # elife
 
     tag_dl = soup.find_all('a', {'data-download-type': 'pdf-article'})
+
+    if len(tag_dl) > 0:
+        assert len(tag_dl) == 1
+        dl_url = tag_dl[0].attrs['href']
+
+        return dl_url
+
+    # pmc
+
+    tag_dl = soup.find_all('link', {'rel': 'alternate', 'type': 'application/pdf'})
 
     if len(tag_dl) > 0:
         assert len(tag_dl) == 1
