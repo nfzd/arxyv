@@ -24,6 +24,7 @@ Works with URLs from:
 * Nature
 * OpenReview
 * PLoS
+* PMC
 * PNAS
 
 ## Dependencies
