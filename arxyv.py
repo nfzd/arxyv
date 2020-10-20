@@ -34,7 +34,7 @@ def get(url, download_to=None):
     return r
 
 
-def get_meta_tag(soup, name_list, title, ind=0, max_len=None):
+def get_meta_tag(soup, name_list, title, ind=0, max_len=None, raise_error=True):
     assert ind in [0, -1]
 
     for name in name_list:
@@ -44,6 +44,9 @@ def get_meta_tag(soup, name_list, title, ind=0, max_len=None):
             break
 
     if len(tag) == 0:
+        if not raise_error:
+            return None
+
         raise ValueError('cannot find {0:s} tag'.format(title))
 
     if max_len is not None:
@@ -77,6 +80,34 @@ def get_ieee_metadata(t, verbose=False):
     return author, title, year, dl_url
 
 
+def get_author(soup):
+
+    multi_author_str = get_meta_tag(soup, ['citation_authors'], 'author', raise_error=False)
+
+    if multi_author_str is not None:
+        if ',' in multi_author_str:
+            first_author_str = multi_author_str.split(',')[0]
+        else:
+            first_author_str = multi_author_str
+
+        return first_author_str
+
+    # science direct
+
+    tag = soup.find_all('span', {'class': 'text surname'})
+
+    if len(tag) > 0:
+        first_author_str = tag[0].text.capitalize()
+
+        return first_author_str
+
+    # other
+
+    first_author_str = get_meta_tag(soup, ['citation_author', 'dc.contributor', 'dc.Creator', 'text surname'], 'author')
+
+    return first_author_str
+
+
 def handle_url(abs_url, outdir, dl_url=None, verbose=False):
 
     # get abs page
@@ -103,16 +134,7 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
     # first author
 
     if not ieee:
-        try:
-            multi_author_str = get_meta_tag(soup, ['citation_authors'], 'author')
-
-            if ',' in multi_author_str:
-                first_author_str = multi_author_str.split(',')[0]
-            else:
-                first_author_str = multi_author_str
-
-        except ValueError:
-            first_author_str = get_meta_tag(soup, ['citation_author', 'dc.contributor', 'dc.Creator'], 'author')
+        first_author_str = get_author(soup)
 
     if ',' in first_author_str:
         first_author = first_author_str.split(',')[0]
@@ -176,7 +198,7 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
             raise ValueError('cannot find download url')
 
         if dl_url[:4] != 'http':
-            raise
+            raise ValueError()
 
     if verbose:
         print('downloading pdf: '+dl_url)
@@ -238,6 +260,29 @@ def find_download_url(soup):
         dl_url = tag_dl[0].attrs['href']
 
         return dl_url
+
+    # science direct
+
+    html = str(soup)
+
+    start_s = '"linkToPdf"'
+
+    if start_s in html:
+        html = html[html.index(start_s):]
+        html = html[html.index(':'):]
+        html = html[html.index('"')+1:]
+        show_url = "https://sciencedirect.com" + html[:html.index('"')]
+
+        html = get(show_url)
+
+        start_s = 'Please wait while you are being redirected, or click <a href'
+
+        if start_s in html:
+            html = html[html.index(start_s):]
+            html = html[html.index('"')+1:]
+            dl_url = html[:html.index('"')]
+
+            return dl_url
 
     return None
 

@@ -8,7 +8,7 @@
 
         arxyv.py 2001.01337 -o target_directory  # otherwise $HOME/Downloads is used
 
-PDFs are renamed as *[firstauthor]_[year]_[title].pdf*.
+PDFs are renamed as *[firstauthor]\_[year]\_[title].pdf*.
 
 Works with URLs from:
 
@@ -24,7 +24,9 @@ Works with URLs from:
 * Nature
 * OpenReview
 * PLoS
+* PMC
 * PNAS
+* ScienceDirect
 
 ## Dependencies
 
