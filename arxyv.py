@@ -125,7 +125,7 @@ def get_author(soup):
     return first_author_str
 
 
-def handle_url(abs_url, outdir, dl_url=None, supp_url=None, verbose=False):
+def handle_url(abs_url, outdir, dl_url=None, supp_url=None, skip_pages=0, verbose=False):
 
     # get abs page
 
@@ -242,6 +242,15 @@ def handle_url(abs_url, outdir, dl_url=None, supp_url=None, verbose=False):
 
         print('joined supplement')
 
+    # skip pages
+
+    if skip_pages:
+        c = ['pdfjam', fn, str(skip_pages)+'-', '--outfile', fn]
+
+        subprocess.run(c)
+
+        print('skipped {0:d} pages'.format(skip_pages))
+
     if verbose:
         print('done')
 
@@ -324,8 +333,9 @@ def find_download_url(soup):
 @click.argument('key', type=str)
 @click.option('-o', '--outdir', type=click.Path(exists=True), default=None, help='output directory, default: $HOME/Downloads')
 @click.option('-s', '--supplement', type=str, default=None, help='url of supplementary pdf to merge')
+@click.option('--skip-pages', type=int, default=0, help='number of pages to skip')
 @click.option('-v', '--verbose', is_flag=True, default=False, help='be verbose')
-def main(key, outdir, supplement, verbose):
+def main(key, outdir, supplement, skip_pages, verbose):
 
     # set outdir
 
@@ -354,7 +364,7 @@ def main(key, outdir, supplement, verbose):
         else:
             supp_url = None
 
-        handle_url(url, outdir=outdir, supp_url=supp_url, verbose=verbose)
+        handle_url(url, outdir=outdir, supp_url=supp_url, skip_pages=skip_pages, verbose=verbose)
 
     else:  # try interpreting as arXiv key
         if verbose:
@@ -381,7 +391,7 @@ def main(key, outdir, supplement, verbose):
         abs_url = url_base + '/abs/' + key
         dl_url = url_base + '/pdf/' + key
 
-        handle_url(abs_url, dl_url=dl_url, outdir=outdir, verbose=verbose)
+        handle_url(abs_url, dl_url=dl_url, outdir=outdir, skip_pages=skip_pages, verbose=verbose)
 
 
 if __name__ == '__main__':
