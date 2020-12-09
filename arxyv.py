@@ -6,16 +6,33 @@
 from bs4 import BeautifulSoup
 import click
 import json
+import os
 import os.path
 import re
 import requests
 import shutil
+import subprocess
 from urllib.parse import urlparse
 
 
 default_outdir = '~/Downloads'
 
 user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.92 Safari/537.36'
+
+
+def check_url(url):
+    up = urlparse(url)
+
+    if urlparse(url).netloc:
+        return url
+
+    url = 'https://' + url
+
+    if urlparse(url).netloc:
+        return url
+
+    return None
+
 
 def get(url, download_to=None):
     headers = {'user-agent': user_agent}
@@ -108,7 +125,7 @@ def get_author(soup):
     return first_author_str
 
 
-def handle_url(abs_url, outdir, dl_url=None, verbose=False):
+def handle_url(abs_url, outdir, dl_url=None, supp_url=None, verbose=False):
 
     # get abs page
 
@@ -186,7 +203,6 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
     # make filename filesystem safe
 
     fn = re.sub('[^\w\-_\.]', '', fn.replace(' ', '_')).lower() + '.pdf'
-
     fn = os.path.join(outdir, fn)
 
     # download
@@ -208,6 +224,23 @@ def handle_url(abs_url, outdir, dl_url=None, verbose=False):
     #response_headers = {k: v for k, v in t[1]._headers}
     #assert response_headers['Content-Type'] == 'application/pdf'
     #assert int(response_headers['Content-Length']) > 0
+
+    # handle supplement
+
+    if supp_url:
+        fn_supp = fn[:-4] + '_supplement.pdf'
+
+        r = get(supp_url, download_to=fn_supp)
+
+        # join files and clean up
+
+        c = ['pdfjam', '--rotateoversize', 'false', fn, fn_supp, '--outfile', fn]
+
+        subprocess.run(c)
+
+        os.remove(fn_supp)
+
+        print('joined supplement')
 
     if verbose:
         print('done')
@@ -290,8 +323,9 @@ def find_download_url(soup):
 @click.command(help='Download paper defined by key (either an url or an arXiv handle).')
 @click.argument('key', type=str)
 @click.option('-o', '--outdir', type=click.Path(exists=True), default=None, help='output directory, default: $HOME/Downloads')
+@click.option('-s', '--supplement', type=str, default=None, help='url of supplementary pdf to merge')
 @click.option('-v', '--verbose', is_flag=True, default=False, help='be verbose')
-def main(key, outdir, verbose):
+def main(key, outdir, supplement, verbose):
 
     # set outdir
 
@@ -305,46 +339,49 @@ def main(key, outdir, verbose):
     if verbose:
         print('passed key: '+key)
 
-    up = urlparse(key)
+    url = check_url(key)
 
-    if urlparse(key).netloc:  # key is url
+    if url:
         if verbose:
             print('key is url')
-        handle_url(key, outdir=outdir, verbose=verbose)
 
-    else:
-        key_with_scheme = 'https://' + key
+        if supplement:
+            supp_url = check_url(supplement)
+
+            if not supp_url:
+                raise ValueError('cannot interpret supplement as url: ' + supplement)
+
+        else:
+            supp_url = None
+
+        handle_url(url, outdir=outdir, supp_url=supp_url, verbose=verbose)
+
+    else:  # try interpreting as arXiv key
         if verbose:
-            print('modified key is url: '+key_with_scheme)
+            print('cannot interpret key as url')
 
-        up = urlparse(key_with_scheme)
+        if not '.' in key and key.count('.') == 1:
+            raise ValueError('cannot interpret key: '+key)
 
-        if up.netloc and up.path:  # key is url without scheme
-            handle_url(key_with_scheme, outdir=outdir, verbose=verbose)
+        sp = key.split('.')
 
-        else:  # try interpreting as arXiv key
-            if verbose:
-                print('cannot interpret key as url')
+        if not len(sp[0]) == 4 and len(sp[1]) in [4, 5]:
+            raise ValueError('cannot interpret key: '+key)
 
-            if not '.' in key and key.count('.') == 1:
-                raise ValueError('cannot interpret key: '+key)
+        if not sp[0].isnumeric() and sp[1].isnumeric():
+            raise ValueError('cannot interpret key: '+key)
 
-            sp = key.split('.')
+        if verbose:
+            print('assuming key is arxiv key')
 
-            if not len(sp[0]) == 4 and len(sp[1]) in [4, 5]:
-                raise ValueError('cannot interpret key: '+key)
+        if supplement:
+            print('passed arxiv key, ignoring passed supplement')
 
-            if not sp[0].isnumeric() and sp[1].isnumeric():
-                raise ValueError('cannot interpret key: '+key)
+        url_base = 'https://arxiv.org'
+        abs_url = url_base + '/abs/' + key
+        dl_url = url_base + '/pdf/' + key
 
-            if verbose:
-                print('assuming key is arxiv key')
-
-            url_base = 'https://arxiv.org'
-            abs_url = url_base + '/abs/' + key
-            dl_url = url_base + '/pdf/' + key
-
-            handle_url(abs_url, dl_url=dl_url, outdir=outdir, verbose=verbose)
+        handle_url(abs_url, dl_url=dl_url, outdir=outdir, verbose=verbose)
 
 
 if __name__ == '__main__':
