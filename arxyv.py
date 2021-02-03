@@ -76,7 +76,7 @@ def get_ieee_metadata(t, verbose=False):
     if verbose:
         print('attempting to read metadata from javascript assignment (ieee style)')
 
-    start = 'global.document.metadata={'
+    start = 'lobal.document.metadata={'
 
     if not start in t:
         return None
@@ -88,7 +88,11 @@ def get_ieee_metadata(t, verbose=False):
 
     author = meta['authors'][0]['lastName']
     title = meta['title']
-    year = meta['journalDisplayDateOfPublication']#[-4:]
+
+    if 'journalDisplayDateOfPublication' in meta:
+        year = meta['journalDisplayDateOfPublication']#[-4:]
+    else:
+        year = meta['publicationDate'][-4:]
     arnumber = meta['pdfUrl'].split('=')[-1]
     dl_url = 'http://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&isnumber=&arnumber=' + arnumber
 
