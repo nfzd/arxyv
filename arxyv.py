@@ -276,7 +276,7 @@ def find_download_url(soup):
 
     # annual review
 
-    tag_doi = soup.find_all('meta', {'name': 'dc.Identifier'})
+    tag_doi = soup.find_all('meta', {'name': 'dc.Identifier', 'scheme': 'doi'})
 
     if len(tag_doi) > 0:
         assert len(tag_doi) == 1
