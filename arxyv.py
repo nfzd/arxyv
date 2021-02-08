@@ -297,6 +297,16 @@ def find_download_url(soup):
 
         return dl_url
 
+    # neco
+
+    tag_dl = soup.find_all('a', {'class': 'show-pdf'})
+
+    if len(tag_dl) > 0:
+        #assert len(tag_dl) == 1
+        dl_url = "https://www.mitpressjournals.org" + tag_dl[0].attrs['href']
+
+        return dl_url
+
     # pmc
 
     tag_dl = soup.find_all('link', {'rel': 'alternate', 'type': 'application/pdf'})
