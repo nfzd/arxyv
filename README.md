@@ -8,7 +8,7 @@
 
         arxyv.py 2001.01337 -o target_directory  # otherwise $HOME/Downloads is used
 
-PDFs are renamed as *[firstauthor]\_[year]\_[title].pdf*.
+PDFs are renamed as *[firstauthor]\_[year]\_[title].pdf*. Non-ascii characters in names and titles are replaced with the closest matching ascii equivalent.
 
 Works with URLs from:
 
@@ -21,6 +21,7 @@ Works with URLs from:
 * Frontiers
 * ICLR
 * IEEExplore
+* MITP journals
 * Nature
 * OpenReview
 * PLoS
@@ -33,3 +34,4 @@ Works with URLs from:
 * BeautifulSoup
 * click
 * requests
+* unidecode

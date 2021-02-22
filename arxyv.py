@@ -12,12 +12,35 @@ import re
 import requests
 import shutil
 import subprocess
+from unidecode import unidecode
 from urllib.parse import urlparse
 
 
 default_outdir = '~/Downloads'
 
 user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.92 Safari/537.36'
+
+
+def check_arxiv_key(key, verbose=False):
+    if not '.' in key and key.count('.') == 1:
+        raise ValueError('cannot interpret key: '+key)
+
+    sp = key.split('.')
+
+    if not (len(sp[0]) == 4 and len(sp[1]) in [4, 5]):
+        raise ValueError('cannot interpret key: '+key)
+
+    if not sp[0].isnumeric() and sp[1].isnumeric():
+        raise ValueError('cannot interpret key: '+key)
+
+    if verbose:
+        print('assuming key is arxiv key')
+
+    url_base = 'https://arxiv.org'
+    abs_url = url_base + '/abs/' + key
+    dl_url = url_base + '/pdf/' + key
+
+    return abs_url, dl_url
 
 
 def check_url(url):
@@ -96,7 +119,8 @@ def get_ieee_metadata(t, verbose=False):
     arnumber = meta['pdfUrl'].split('=')[-1]
     dl_url = 'http://ieeexplore.ieee.org/stampPDF/getPDF.jsp?tp=&isnumber=&arnumber=' + arnumber
 
-    print(dl_url)
+    if verbose:
+        print('using download url: ' + dl_url)
 
     return author, title, year, dl_url
 
@@ -206,6 +230,7 @@ def handle_url(abs_url, outdir, dl_url=None, supp_url=None, skip_pages=0, verbos
 
     # make filename filesystem safe
 
+    fn = unidecode(fn)
     fn = re.sub('[^\w\-_\.]', '', fn.replace(' ', '_')).lower() + '.pdf'
     fn = os.path.join(outdir, fn)
 
@@ -315,6 +340,9 @@ def find_download_url(soup):
         assert len(tag_dl) == 1
         dl_url = tag_dl[0].attrs['href']
 
+        if dl_url[:4] != 'http':
+            dl_url = 'https://www.ncbi.nlm.nih.gov' + dl_url
+
         return dl_url
 
     # science direct
@@ -358,54 +386,53 @@ def main(key, outdir, supplement, skip_pages, verbose):
 
     outdir = os.path.expanduser(outdir)
 
-    # check if key is an url
-
     if verbose:
         print('passed key: '+key)
 
-    url = check_url(key)
+    # check if key is an arXiv key
 
-    if url:
+    if verbose:
+        print('try to interpret key as arXiv key')
+
+    try:
+        url, dl_url = check_arxiv_key(key, verbose=verbose)
+        error = False
+
+    except ValueError:
+        error = True
+        print('cannot interpret key as arXiv key')
+
+    if error:
+
+        # check if key is an url
+
         if verbose:
-            print('key is url')
+            print('try to interpret key as url')
 
-        if supplement:
-            supp_url = check_url(supplement)
+        url = check_url(key)
 
-            if not supp_url:
-                raise ValueError('cannot interpret supplement as url: ' + supplement)
+        if url:
+            if verbose:
+                print('key is url')
+
+            dl_url = None
 
         else:
-            supp_url = None
+            if verbose:
+                print('cannot interpret key as url')
 
-        handle_url(url, outdir=outdir, supp_url=supp_url, skip_pages=skip_pages, verbose=verbose)
+    # handle supplement
 
-    else:  # try interpreting as arXiv key
-        if verbose:
-            print('cannot interpret key as url')
+    if supplement:
+        supp_url = check_url(supplement)
 
-        if not '.' in key and key.count('.') == 1:
-            raise ValueError('cannot interpret key: '+key)
+        if not supp_url:
+            raise ValueError('cannot interpret supplement as url: ' + supplement)
 
-        sp = key.split('.')
+    else:
+        supp_url = None
 
-        if not len(sp[0]) == 4 and len(sp[1]) in [4, 5]:
-            raise ValueError('cannot interpret key: '+key)
-
-        if not sp[0].isnumeric() and sp[1].isnumeric():
-            raise ValueError('cannot interpret key: '+key)
-
-        if verbose:
-            print('assuming key is arxiv key')
-
-        if supplement:
-            print('passed arxiv key, ignoring passed supplement')
-
-        url_base = 'https://arxiv.org'
-        abs_url = url_base + '/abs/' + key
-        dl_url = url_base + '/pdf/' + key
-
-        handle_url(abs_url, dl_url=dl_url, outdir=outdir, skip_pages=skip_pages, verbose=verbose)
+    handle_url(url, dl_url=dl_url, outdir=outdir, skip_pages=skip_pages, verbose=verbose)
 
 
 if __name__ == '__main__':
