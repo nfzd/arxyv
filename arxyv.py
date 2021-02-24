@@ -400,7 +400,8 @@ def main(key, outdir, supplement, skip_pages, verbose):
 
     except ValueError:
         error = True
-        print('cannot interpret key as arXiv key')
+        if verbose:
+            print('cannot interpret key as arXiv key')
 
     if error:
 
