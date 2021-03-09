@@ -132,6 +132,8 @@ def get_author(soup):
     if multi_author_str is not None:
         if ',' in multi_author_str:
             first_author_str = multi_author_str.split(',')[0]
+        elif ';' in multi_author_str:
+            first_author_str = multi_author_str.split(';')[0]
         else:
             first_author_str = multi_author_str
 
@@ -433,7 +435,7 @@ def main(key, outdir, supplement, skip_pages, verbose):
     else:
         supp_url = None
 
-    handle_url(url, dl_url=dl_url, outdir=outdir, skip_pages=skip_pages, verbose=verbose)
+    handle_url(url, dl_url=dl_url, supp_url=supp_url, outdir=outdir, skip_pages=skip_pages, verbose=verbose)
 
 
 if __name__ == '__main__':
