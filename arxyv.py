@@ -10,7 +10,6 @@ import os
 import os.path
 import re
 import requests
-import shutil
 import subprocess
 from unidecode import unidecode
 from urllib.parse import urlparse
@@ -22,16 +21,16 @@ user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36
 
 
 def check_arxiv_key(key, verbose=False):
-    if not '.' in key and key.count('.') == 1:
-        raise ValueError('cannot interpret key: '+key)
+    if '.' not in key and key.count('.') == 1:
+        raise ValueError('cannot interpret key: ' + key)
 
     sp = key.split('.')
 
     if not (len(sp[0]) == 4 and len(sp[1]) in [4, 5]):
-        raise ValueError('cannot interpret key: '+key)
+        raise ValueError('cannot interpret key: ' + key)
 
     if not sp[0].isnumeric() and sp[1].isnumeric():
-        raise ValueError('cannot interpret key: '+key)
+        raise ValueError('cannot interpret key: ' + key)
 
     if verbose:
         print('assuming key is arxiv key')
@@ -44,8 +43,6 @@ def check_arxiv_key(key, verbose=False):
 
 
 def check_url(url):
-    up = urlparse(url)
-
     if urlparse(url).netloc:
         return url
 
@@ -101,7 +98,7 @@ def get_ieee_metadata(t, verbose=False):
 
     start = 'lobal.document.metadata={'
 
-    if not start in t:
+    if start not in t:
         return None
 
     s0 = t.index(start) + len(start) - 1
@@ -113,7 +110,7 @@ def get_ieee_metadata(t, verbose=False):
     title = meta['title']
 
     if 'journalDisplayDateOfPublication' in meta:
-        year = meta['journalDisplayDateOfPublication']#[-4:]
+        year = meta['journalDisplayDateOfPublication']
     else:
         year = meta['publicationDate'][-4:]
     arnumber = meta['pdfUrl'].split('=')[-1]
@@ -160,7 +157,7 @@ def handle_url(abs_url, outdir, dl_url=None, supp_url=None, skip_pages=0, verbos
     # get abs page
 
     if verbose:
-        print('downloading abs page: '+abs_url)
+        print('downloading abs page: ' + abs_url)
 
     t = get(abs_url)
 
@@ -189,7 +186,7 @@ def handle_url(abs_url, outdir, dl_url=None, supp_url=None, skip_pages=0, verbos
         first_author = first_author_str.split(' ')[-1]
 
     if verbose:
-        print('detected first author: '+first_author)
+        print('detected first author: ' + first_author)
 
     # year
 
@@ -218,7 +215,7 @@ def handle_url(abs_url, outdir, dl_url=None, supp_url=None, skip_pages=0, verbos
     assert len(year) == 4
 
     if verbose:
-        print('detected year: '+year)
+        print('detected year: ' + year)
 
     # title
 
@@ -226,14 +223,14 @@ def handle_url(abs_url, outdir, dl_url=None, supp_url=None, skip_pages=0, verbos
         title = get_meta_tag(soup, ['citation_title', 'dc.title', 'dc.Title'], 'title', max_len=1)
 
     if verbose:
-        print('detected title: '+title)
+        print('detected title: ' + title)
 
     fn = '_'.join([first_author, year, title])
 
     # make filename filesystem safe
 
     fn = unidecode(fn)
-    fn = re.sub('[^\w\-_\.]', '', fn.replace(' ', '_')).lower() + '.pdf'
+    fn = re.sub(r'[^\w\-_\.]', '', fn.replace(' ', '_')).lower() + '.pdf'
     fn = os.path.join(outdir, fn)
 
     # download
@@ -248,20 +245,16 @@ def handle_url(abs_url, outdir, dl_url=None, supp_url=None, skip_pages=0, verbos
             raise ValueError()
 
     if verbose:
-        print('downloading pdf: '+dl_url)
+        print('downloading pdf: ' + dl_url)
 
-    r = get(dl_url, download_to=fn)
-
-    #response_headers = {k: v for k, v in t[1]._headers}
-    #assert response_headers['Content-Type'] == 'application/pdf'
-    #assert int(response_headers['Content-Length']) > 0
+    get(dl_url, download_to=fn)  # TODO: handle response
 
     # handle supplement
 
     if supp_url:
         fn_supp = fn[:-4] + '_supplement.pdf'
 
-        r = get(supp_url, download_to=fn_supp)
+        get(supp_url, download_to=fn_supp)  # TODO: handle response
 
         # join files and clean up
 
@@ -276,7 +269,7 @@ def handle_url(abs_url, outdir, dl_url=None, supp_url=None, skip_pages=0, verbos
     # skip pages
 
     if skip_pages:
-        c = ['pdfjam', fn, str(skip_pages)+'-', '--outfile', fn]
+        c = ['pdfjam', fn, str(skip_pages) + '-', '--outfile', fn]
 
         subprocess.run(c)
 
@@ -285,7 +278,7 @@ def handle_url(abs_url, outdir, dl_url=None, supp_url=None, skip_pages=0, verbos
     if verbose:
         print('done')
 
-    print('saved to '+fn)
+    print('saved to ' + fn)
 
 
 def find_download_url(soup):
@@ -356,7 +349,7 @@ def find_download_url(soup):
     if start_s in html:
         html = html[html.index(start_s):]
         html = html[html.index(':'):]
-        html = html[html.index('"')+1:]
+        html = html[html.index('"') + 1:]
         show_url = "https://sciencedirect.com" + html[:html.index('"')]
 
         html = get(show_url)
@@ -365,7 +358,7 @@ def find_download_url(soup):
 
         if start_s in html:
             html = html[html.index(start_s):]
-            html = html[html.index('"')+1:]
+            html = html[html.index('"') + 1:]
             dl_url = html[:html.index('"')]
 
             return dl_url
@@ -389,7 +382,7 @@ def main(key, outdir, supplement, skip_pages, verbose):
     outdir = os.path.expanduser(outdir)
 
     if verbose:
-        print('passed key: '+key)
+        print('passed key: ' + key)
 
     # check if key is an arXiv key
 
