@@ -342,15 +342,20 @@ def find_download_url(soup):
 
     # science direct
 
-    html = str(soup)
+    tag_json_data = soup.find_all('script', {'type': 'application/json'})
 
-    start_s = '"linkToPdf"'
+    if len(tag_json_data) > 0:
+        assert len(tag_json_data) == 1
+        json_data = json.loads(str(tag_json_data[0].contents[0]))
 
-    if start_s in html:
-        html = html[html.index(start_s):]
-        html = html[html.index(':'):]
-        html = html[html.index('"') + 1:]
-        show_url = "https://sciencedirect.com" + html[:html.index('"')]
+        dl_data = json_data['article']['pdfDownload']
+        assert dl_data['linkType'] == 'DOWNLOAD'
+
+        url_data = dl_data['urlMetadata']
+        assert url_data['path'] == 'science/article/pii'
+
+        query = 'pdfft?md5=' + url_data['queryParams']['md5'] + '&pid=' + url_data['queryParams']['pid']
+        show_url = '/'.join(['https://www.sciencedirect.com', url_data['path'], url_data['pii'], query])
 
         html = get(show_url)
 
