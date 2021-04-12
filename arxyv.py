@@ -231,6 +231,10 @@ def handle_url(abs_url, outdir, dl_url=None, supp_url=None, skip_pages=0, verbos
 
     fn = unidecode(fn)
     fn = re.sub(r'[^\w\-_\.]', '', fn.replace(' ', '_')).lower() + '.pdf'
+
+    if verbose:
+        print('generated filename: '+fn)
+
     fn = os.path.join(outdir, fn)
 
     # download
