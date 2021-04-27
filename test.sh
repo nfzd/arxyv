@@ -40,6 +40,7 @@ test_download 'https://openreview.net/forum?id=S1Bb3D5gg' weston_2017_*.pdf
 test_download 'https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007395' bourne_2019_*.pdf
 test_download 'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7604159/' chen_2021_*.pdf
 test_download 'https://www.pnas.org/content/117/40/24627' swinderen_2020_*.pdf
+test_download 'https://royalsocietypublishing.org/doi/10.1098/rsob.200367' wang_2021_*.pdf
 test_download 'https://www.sciencedirect.com/science/article/pii/S0893608019303181?fbclid=IwAR3Zu4aj38sb4pchp-jtzaizsIYvYao-QAZpFC2Ay8Nb672fipM-TDGE9eY' taherkhani_2019_*.pdf
 
 echo "all tests ok."

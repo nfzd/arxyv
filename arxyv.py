@@ -287,6 +287,8 @@ def handle_url(abs_url, outdir, dl_url=None, supp_url=None, skip_pages=0, verbos
 
 def find_download_url(soup):
     # try to find download link
+    #
+    # TODO: pass base url for concatenation, don't use fixed values
 
     # most sites
 
@@ -341,6 +343,17 @@ def find_download_url(soup):
 
         if dl_url[:4] != 'http':
             dl_url = 'https://www.ncbi.nlm.nih.gov' + dl_url
+
+        return dl_url
+
+    # royal society publishing
+
+    tag_dl = soup.find_all('div', {'class': 'download_transportable'})
+
+    if len(tag_dl) > 0:
+        assert len(tag_dl) == 1
+        dl_url = [*tag_dl[0].children][0]['href']
+        dl_url = 'https://royalsocietypublishing.org' + dl_url
 
         return dl_url
 

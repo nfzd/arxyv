@@ -27,6 +27,7 @@ Works with URLs from:
 * PLoS
 * PMC
 * PNAS
+* Royal Society Publishing
 * ScienceDirect
 
 ## Dependencies
