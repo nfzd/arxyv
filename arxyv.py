@@ -10,6 +10,7 @@ import os
 import os.path
 import re
 import requests
+import shutil
 import subprocess
 from unidecode import unidecode
 from urllib.parse import urlparse
@@ -152,7 +153,7 @@ def get_author(soup):
     return first_author_str
 
 
-def handle_url(abs_url, outdir, dl_url=None, supp_url=None, skip_pages=0, verbose=False):
+def handle_url(abs_url, outdirs, dl_url=None, supp_url=None, skip_pages=0, verbose=False):
 
     # get abs page
 
@@ -235,7 +236,8 @@ def handle_url(abs_url, outdir, dl_url=None, supp_url=None, skip_pages=0, verbos
     if verbose:
         print('generated filename: '+fn)
 
-    fn = os.path.join(outdir, fn)
+    fn_list = [os.path.join(outdir, fn) for outdir in outdirs]
+    fn = fn_list[0]
 
     # download
 
@@ -283,6 +285,12 @@ def handle_url(abs_url, outdir, dl_url=None, supp_url=None, skip_pages=0, verbos
         print('done')
 
     print('saved to ' + fn)
+
+    for fn1 in fn_list[1:]:
+        shutil.copyfile(fn, fn1)
+        # TODO: check return / catch errors
+
+        print('saved to ' + fn1)
 
 
 def find_download_url(soup):
@@ -390,7 +398,7 @@ def find_download_url(soup):
 
 @click.command(help='Download paper defined by key (either an url or an arXiv handle).')
 @click.argument('key', type=str)
-@click.option('-o', '--outdir', type=click.Path(exists=True), default=None, help='output directory, default: $HOME/Downloads')
+@click.option('-o', '--outdir', type=click.Path(exists=True), default=None, multiple=True, help='output directory, default: $HOME/Downloads')
 @click.option('-s', '--supplement', type=str, default=None, help='url of supplementary pdf to merge')
 @click.option('--skip-pages', type=int, default=0, help='number of pages to skip')
 @click.option('-v', '--verbose', is_flag=True, default=False, help='be verbose')
@@ -399,9 +407,9 @@ def main(key, outdir, supplement, skip_pages, verbose):
     # set outdir
 
     if outdir is None:
-        outdir = default_outdir
+        outdir = [default_outdir]
 
-    outdir = os.path.expanduser(outdir)
+    outdir = [os.path.expanduser(od) for od in outdir]
 
     if verbose:
         print('passed key: ' + key)
@@ -450,7 +458,7 @@ def main(key, outdir, supplement, skip_pages, verbose):
     else:
         supp_url = None
 
-    handle_url(url, dl_url=dl_url, supp_url=supp_url, outdir=outdir, skip_pages=skip_pages, verbose=verbose)
+    handle_url(url, dl_url=dl_url, supp_url=supp_url, outdirs=outdir, skip_pages=skip_pages, verbose=verbose)
 
 
 if __name__ == '__main__':
