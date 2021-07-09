@@ -170,7 +170,11 @@ def handle_url(abs_url, outdirs, dl_url=None, supp_url=None, skip_pages=0, verbo
     soup = BeautifulSoup(t, features='lxml')
 
     if 'ieeexplore.ieee.org' in abs_url:
-        first_author_str, title, date_str, dl_url = get_ieee_metadata(t, verbose=verbose)
+        first_author_str, title, date_str, dl_url0 = get_ieee_metadata(t, verbose=verbose)
+
+        if dl_url is None:
+            dl_url = dl_url0
+
         ieee = True
 
     else:
@@ -399,10 +403,11 @@ def find_download_url(soup):
 @click.command(help='Download paper defined by key (either an url or an arXiv handle).')
 @click.argument('key', type=str)
 @click.option('-o', '--outdir', type=click.Path(exists=True), default=None, multiple=True, help='output directory, default: $HOME/Downloads')
+@click.option('-d', '--download-url', type=str, default=None, help='download url, default: try to infer from abstract webpage')
 @click.option('-s', '--supplement', type=str, default=None, help='url of supplementary pdf to merge')
 @click.option('--skip-pages', type=int, default=0, help='number of pages to skip')
 @click.option('-v', '--verbose', is_flag=True, default=False, help='be verbose')
-def main(key, outdir, supplement, skip_pages, verbose):
+def main(key, outdir, supplement, download_url, skip_pages, verbose):
 
     # set outdir
 
@@ -421,6 +426,7 @@ def main(key, outdir, supplement, skip_pages, verbose):
 
     try:
         url, dl_url = check_arxiv_key(key, verbose=verbose)
+
         error = False
 
     except ValueError:
@@ -446,6 +452,18 @@ def main(key, outdir, supplement, skip_pages, verbose):
         else:
             if verbose:
                 print('cannot interpret key as url')
+
+    # handle passed download url
+
+    if download_url is not None:
+        if dl_url is not None:
+            if verbose:
+                print('overriding download url with argument')
+        else:
+            if verbose:
+                print('using download url from argument')
+
+        dl_url = download_url
 
     # handle supplement
 

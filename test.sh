@@ -36,7 +36,7 @@ test_download 'https://iclr.cc/virtual_2020/poster_BkxRRkSKwr.html' jin_2020_*.p
 test_download 'https://ieeexplore.ieee.org/document/1677462' mollick_2006_*.pdf
 test_download 'https://www.mitpressjournals.org/doi/abs/10.1162/neco.2007.19.10.2638' guclu_2007_*.pdf
 test_download 'https://www.nature.com/articles/510218a' kutschera_2014_*.pdf
-test_download 'https://openreview.net/forum?id=S1Bb3D5gg' weston_2017_*.pdf
+test_download 'https://openreview.net/forum?id=S1Bb3D5gg' bordes_2017_*.pdf
 test_download 'https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007395' bourne_2019_*.pdf
 test_download 'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7604159/' chen_2021_*.pdf
 test_download 'https://www.pnas.org/content/117/40/24627' swinderen_2020_*.pdf
