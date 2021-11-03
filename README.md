@@ -12,6 +12,7 @@ PDFs are renamed as *[firstauthor]\_[year]\_[title].pdf*. Non-ascii characters i
 
 Works with URLs from:
 
+* ACS
 * Annual Reviews
 * APS
 * arXiv

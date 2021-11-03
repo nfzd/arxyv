@@ -155,6 +155,8 @@ def get_author(soup):
 
 def handle_url(abs_url, outdirs, dl_url=None, supp_url=None, skip_pages=0, verbose=False):
 
+    base_url = urlparse(abs_url).scheme + '://' + urlparse(abs_url).netloc
+
     # get abs page
 
     if verbose:
@@ -246,7 +248,7 @@ def handle_url(abs_url, outdirs, dl_url=None, supp_url=None, skip_pages=0, verbo
     # download
 
     if dl_url is None:
-        dl_url = find_download_url(soup)
+        dl_url = find_download_url(soup, base_url)
 
         if dl_url is None:
             raise ValueError('cannot find download url')
@@ -297,10 +299,10 @@ def handle_url(abs_url, outdirs, dl_url=None, supp_url=None, skip_pages=0, verbo
         print('saved to ' + fn1)
 
 
-def find_download_url(soup):
+def find_download_url(soup, base_url):
     # try to find download link
     #
-    # TODO: pass base url for concatenation, don't use fixed values
+    # TODO: convert all instances to using passed base url
 
     # most sites
 
@@ -309,6 +311,18 @@ def find_download_url(soup):
     if len(tag_dl) > 0:
         assert len(tag_dl) == 1
         dl_url = tag_dl[0].attrs['content']
+
+        return dl_url
+
+    # acs
+
+    tag_dl = soup.find_all('a', {'class': 'pdf-button'})
+
+    print(tag_dl)
+
+    if len(tag_dl) > 0:
+        assert len(tag_dl) == 1
+        dl_url = base_url + tag_dl[0].attrs['href']
 
         return dl_url
 
@@ -321,7 +335,7 @@ def find_download_url(soup):
         doi = tag_doi[0].attrs['content']
 
         if '/' in doi and doi.split('/')[1][:8] == 'annurev-':
-            dl_url = "https://www.annualreviews.org/doi/pdf/" + doi
+            dl_url = base_url + doi
 
             return dl_url
 
@@ -341,7 +355,7 @@ def find_download_url(soup):
 
     if len(tag_dl) > 0:
         #assert len(tag_dl) == 1
-        dl_url = "https://www.mitpressjournals.org" + tag_dl[0].attrs['href']
+        dl_url = base_url + tag_dl[0].attrs['href']
 
         return dl_url
 
@@ -354,7 +368,7 @@ def find_download_url(soup):
         dl_url = tag_dl[0].attrs['href']
 
         if dl_url[:4] != 'http':
-            dl_url = 'https://www.ncbi.nlm.nih.gov' + dl_url
+            dl_url = base_url + dl_url
 
         return dl_url
 
@@ -365,7 +379,7 @@ def find_download_url(soup):
     if len(tag_dl) > 0:
         assert len(tag_dl) == 1
         dl_url = [*tag_dl[0].children][0]['href']
-        dl_url = 'https://royalsocietypublishing.org' + dl_url
+        dl_url = base_url + dl_url
 
         return dl_url
 
