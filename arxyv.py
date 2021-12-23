@@ -423,7 +423,7 @@ def main(key, outdir, supplement, download_url, skip_pages, verbose):
 
     # set outdir
 
-    if outdir is None:
+    if not outdir:
         outdir = [default_outdir]
 
     outdir = [os.path.expanduser(od) for od in outdir]
