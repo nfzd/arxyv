@@ -318,8 +318,6 @@ def find_download_url(soup, base_url):
 
     tag_dl = soup.find_all('a', {'class': 'pdf-button'})
 
-    print(tag_dl)
-
     if len(tag_dl) > 0:
         assert len(tag_dl) == 1
         dl_url = base_url + tag_dl[0].attrs['href']

@@ -24,6 +24,7 @@ cd $(dirname $0)
 
 mkdir tmp
 
+test_download 'https://pubs.acs.org/doi/10.1021/acs.energyfuels.1c02793' eschenbacher_2021_*.pdf
 test_download 'https://www.annualreviews.org/doi/abs/10.1146/annurev-polisci-052318-025732' riedl_2020_*.pdf
 test_download 'https://journals.aps.org/prx/abstract/10.1103/PhysRevX.6.011030' ansmann_2016_*.pdf
 test_download 'https://arxiv.org/abs/1001.1001v1' judge_2010_*.pdf
