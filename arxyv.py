@@ -281,7 +281,7 @@ def handle_url(abs_url, outdirs, dl_url=None, supp_url=None, skip_pages=0, verbo
     # skip pages
 
     if skip_pages:
-        c = ['pdfjam', fn, str(skip_pages) + '-', '--outfile', fn]
+        c = ['pdfjam', fn, str(skip_pages + 1) + '-', '--outfile', fn]
 
         subprocess.run(c)
 
